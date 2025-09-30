@@ -1,37 +1,46 @@
-using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.InputSystem; // Required for the new input system
 
 public class PlayerCam : MonoBehaviour
 {
-    public float sensX;
-    public float sensY;
+    [Header("Sensitivity")]
+    public float sensX = 200f;
+    public float sensY = 200f;
 
-    public Transform orientation;
-    float xRotation;
-    float yRotation;
+    [Header("References")]
+    public Transform orientation; // Player body (rotates only left/right)
 
-    private void Start()
+    private float xRotation;
+    private float yRotation;
+    private Vector2 lookInput; // stores mouse delta
+
+    void Start()
     {
-        //lock cursor to middle of the screen and hides it
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
     }
 
-    private void Update()
+    void Update()
     {
-        //moving camera
-        float mouseX = Input.GetAxisRaw("Mouse X") * Time.deltaTime * sensX;
-        float mouseY = Input.GetAxisRaw("Mouse Y") * Time.deltaTime * sensY;
+        // Apply mouse delta from the new input system
+        float mouseX = lookInput.x * sensX * Time.deltaTime;
+        float mouseY = lookInput.y * sensY * Time.deltaTime;
 
         yRotation += mouseX;
-
         xRotation -= mouseY;
-
-        //lock view from 180 rotation
         xRotation = Mathf.Clamp(xRotation, -90f, 90f);
 
-        //rotate cam and orientation
-        transform.rotation = quaternion.Euler(xRotation, yRotation, 0);
+        // Rotate camera up/down
+        transform.localRotation = Quaternion.Euler(xRotation, 0, 0);
+
+        // Rotate player body left/right
         orientation.rotation = Quaternion.Euler(0, yRotation, 0);
     }
+
+    // Called automatically by PlayerInput when Look action is triggered
+    public void Look(InputAction.CallbackContext context)
+    {
+        lookInput = context.ReadValue<Vector2>();
+    }
 }
+
